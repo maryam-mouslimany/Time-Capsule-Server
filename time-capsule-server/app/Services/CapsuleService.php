@@ -7,10 +7,10 @@ use Carbon\Carbon;
 
 class CapsuleService
 {
-    static function getCapsules($id)
+    static function getCapsule($id)
     {
         if (!$id) {
-            return Capsule::all();
+            return null;
         }
         return Capsule::find($id);
     }
@@ -18,12 +18,14 @@ class CapsuleService
     static function getPublicWallCapsules()
     {
         Capsule::where('status', 'public')
-        ->where('revealed', false)
-        ->where('reveal_date', '<=', Carbon::now())
-        ->update(['revealed' => true]);
+            ->where('revealed', false)
+            ->where('reveal_date', '<=', Carbon::now())
+            ->update(['revealed' => true]);
 
         return Capsule::where('status', 'public')
             ->where('revealed', true)
+            ->with('tags') 
+            ->with('user')
             ->get();
     }
 

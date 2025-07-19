@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Capsule;
-use App\Traits\ResponseTrait;
 use App\Services\CapsuleService;
 
 
@@ -13,13 +12,13 @@ class CapsuleController extends Controller
 {
     function getCapsules($id = null)
     {
-        $capsules = CapsuleService::getCapsules($id);
-        return ResponseTrait::response($capsules);
+        $capsules = CapsuleService::getCapsule($id);
+        return $this->response($capsules);
     }
 
-    function getPublicWallCapsules(){
-        $capsules = CapsuleService::getPublicWallCapsules();
-        return ResponseTrait::response($capsules);
+    function getCapsule($id){
+        $capsule = CapsuleService::getCapsule($id);
+        return $this->response($capsule);
     }
 
     function addOrUpdateCapsule(Request $request, $id = null)
@@ -30,6 +29,7 @@ class CapsuleController extends Controller
         }
 
         CapsuleService::addOrUpdate($request, $capsule, $id);
-        return ResponseTrait::response($capsule);
+        return$this->response($capsule);
     }
+
 }
