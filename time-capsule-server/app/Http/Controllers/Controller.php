@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-use app\Traits\ResponseTrait;
+use App\Traits\ResponseTrait;
 
 abstract class Controller
 {
