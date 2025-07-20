@@ -2,8 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\Capsule;
 use Carbon\Carbon;
+use App\Models\User;
+use App\Models\Capsule;
+use Stevebauman\Location\Facades\Location;
+use App\Services\DecodeBase64AndSave;
 
 class CapsuleService
 {
@@ -15,36 +18,80 @@ class CapsuleService
         return Capsule::find($id);
     }
 
-    static function getPublicWallCapsules()
+    static function getDashboardCapsules($id)
+    {
+        $user = User::find($id);
+        return $user->capsules()->with('tags')->get();
+    }
+
+    static function getPublicWallCapsules($request)
     {
         Capsule::where('status', 'public')
             ->where('revealed', false)
             ->where('reveal_date', '<=', Carbon::now())
             ->update(['revealed' => true]);
 
-        return Capsule::where('status', 'public')
-            ->where('revealed', true)
-            ->with('tags') 
-            ->with('user')
-            ->get();
+        $capsules = Capsule::with('user')->with('tags')->where('status', 'public')->where('revealed', true);
+
+        if ($request->filter_country) {
+            $capsules->where('country', $request->country);
+        }
+
+        if ($request->start_date) {
+            $capsules->whereDate('reveal_date', '>=', $request->start_date);
+        }
+
+        if ($request->end_date) {
+            $capsules->whereDate('reveal_date', '<=', $request->end_date);
+        }
+
+        if ($request->selected_tag) {
+            $capsules->whereHas('tags', function ($query, $request) {
+                $query->where('tags.id', $request->selected_tag);
+            });
+        }
+
+        return $capsules->get();
     }
 
     static function addOrUpdate($request, $capsule, $id)
     {
-        $capsule->user_id = 0;
-        $capsule->title = $id && !isset($request["title"]) ?  $capsule->title : $request["title"];
-        $capsule->description =  $id && !isset($request["description"]) ?  $capsule->description : $request["description"];
-        $capsule->status = $id && !isset($request["status"]) ?  $capsule->status : $request["status"];;
-        $capsule->message =  $id && !isset($request["message"]) ? $capsule->message : $request["message"];
-        $capsule->surprise_mode =  $id && !isset($request["surprise_mode"]) ? $capsule->surprise_mode : $request["surprise_mode"];
-        $capsule->reveal_date =  $id && !isset($request["reveal_date"]) ? $capsule->reveal_date : $request["reveal_date"];
-        $capsule->ip_address =  $id && !isset($request["ip_address"]) ? $capsule->ip_address : $request["ip_address"];
-        $capsule->country =  $id && !isset($request["country"]) ? $capsule->country : $request["country"];
-        $capsule->revealed =  $id && !isset($request["revealed"]) ? $capsule->revealed : $request["revealed"];
-        $capsule->image_path =  $id && !isset($request["image_path"]) ? $capsule->image_path : $request["image_path"];
-        $capsule->audio_path =  $id && !isset($request["audio_path"]) ? $capsule->audio_path : $request["audio_path"];
+
+        $ip = request()->ip();
+        if ($ip === '127.0.0.1') {
+            $ip = '8.8.8.8';
+        }
+        $position = Location::get($ip);
+
+        if ($position) {
+            $capsule->country = $position->countryName;
+            $capsule->ip_address = $ip;
+        } else {
+            $capsule->country = null;
+            $capsule->ip_address = null;
+        }
+        if (!empty($request->input('image_base64'))) {
+            //dd($request->input('image_base64'));
+            $imagePath = DecodeBase64AndSave::decodeBase64AndSave($request->input('image_base64'));
+            //dd($imagePath);
+            $capsule->image_path = $imagePath;
+        }
+
+        $capsule->user_id = $request->input('user_id');
+        $capsule->title = $id && !$request->has('title') ? $capsule->title : $request->input('title');
+        $capsule->description = $id && !$request->has('description') ? $capsule->description : $request->input('description');
+        $capsule->status = $id && !$request->has('status') ? $capsule->status : $request->input('status');
+        $capsule->message = $id && !$request->has('message') ? $capsule->message : $request->input('message');
+        $capsule->surprise_mode = $id && !$request->has('surprise_mode') ? $capsule->surprise_mode : $request->input('surprise_mode');
+        $capsule->reveal_date = $id && !$request->has('reveal_date') ? $capsule->reveal_date : $request->input('reveal_date');
+        $capsule->color = $id && !$request->has('color') ? $capsule->color : $request->input('color');
+        $capsule->revealed = $id && !$request->has('revealed') ? $capsule->revealed : $request->input('revealed');
+        $capsule->audio_path = $id && !$request->has('audio_path') ? $capsule->audio_path : $request->input('audio_path');
         $capsule->save();
 
+        if ($request->has('selected_tags')) {
+            $capsule->tags()->sync($request->input('selected_tags'));
+        }
         return $capsule;
     }
 }
