@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class DecodeBase64AndSave
 {
@@ -26,6 +26,6 @@ class DecodeBase64AndSave
         //dd($filePath);
 
         Storage::disk('local')->put($filePath, base64_decode($base64Data));
-        return $filePath;
+        return $fileName;
     }
 }

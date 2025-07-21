@@ -5,8 +5,11 @@ namespace App\Services;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Capsule;
-use Stevebauman\Location\Facades\Location;
+use Illuminate\Http\Response;
 use App\Services\DecodeBase64AndSave;
+use Illuminate\Support\Facades\Storage;
+use Stevebauman\Location\Facades\Location;
+
 
 class CapsuleService
 {
@@ -15,7 +18,9 @@ class CapsuleService
         if (!$id) {
             return null;
         }
-        return Capsule::find($id);
+        $capsule = Capsule::with('user')->with('tags')->find($id);
+        //dd([ 'id' => $id, 'capsule' => $capsule]);        
+        return $capsule;
     }
 
     static function getDashboardCapsules($id)
@@ -53,6 +58,22 @@ class CapsuleService
 
         return $capsules->get();
     }
+
+    static function getImage($filename)
+    {
+        $path = 'CapsuleImages/' . $filename;
+        //dd($path);
+
+        if (!Storage::exists($path)) {
+            return response()->json(['message' => 'Image not found'], 404);
+        }
+
+        $fileContent = Storage::get($path);
+        $mimeType = Storage::mimeType($path);
+        return response($fileContent, 200)
+            ->header('Content-Type', $mimeType);
+    }
+
 
     static function addOrUpdate($request, $capsule, $id)
     {

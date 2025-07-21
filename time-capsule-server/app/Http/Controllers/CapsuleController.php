@@ -15,12 +15,14 @@ class CapsuleController extends Controller
         return $this->response($capsules);
     }
 
-    function getDashboardCapsules($id){
+    function getDashboardCapsules($id)
+    {
         $capsules = CapsuleService::getDashboardCapsules($id);
         return $this->response($capsules);
     }
 
-    function getCapsule($id){
+    function getCapsule($id)
+    {
         $capsule = CapsuleService::getCapsule($id);
         return $this->response($capsule);
     }
@@ -33,7 +35,11 @@ class CapsuleController extends Controller
         }
 
         CapsuleService::addOrUpdate($request, $capsule, $id);
-        return$this->response($capsule);
+        return $this->response($capsule);
     }
 
+    function getImage($filename)
+    {
+        return CapsuleService::getImage($filename);
+    }
 }
