@@ -8,6 +8,7 @@ use App\Http\Controllers\TagController;
 Route::post("/login", [AuthController::class, "login"]);
 Route::post("/register", [AuthController::class, "register"]);
 Route::get('/capsule_image/{filename}', [CapsuleController::class, 'getImage']);
+Route::get('/capsule_unlisted/{identifier}', [CapsuleController::class, 'showUnlisted']);
 
 Route::group(["middleware" => "auth:api"], function () {
 

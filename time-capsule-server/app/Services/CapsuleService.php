@@ -5,7 +5,7 @@ namespace App\Services;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Capsule;
-use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 use App\Services\DecodeBase64AndSave;
 use Illuminate\Support\Facades\Storage;
 use Stevebauman\Location\Facades\Location;
@@ -13,13 +13,13 @@ use Stevebauman\Location\Facades\Location;
 
 class CapsuleService
 {
-    static function getCapsule($id)
+    static function getCapsule($param)
     {
-        if (!$id) {
-            return null;
+        if (is_numeric($param)) {
+            $capsule = Capsule::with('user')->with('tags')->find($param);
+        } else {
+            $capsule = Capsule::with('user')->with('tags')->where('identifier', $param)->first();
         }
-        $capsule = Capsule::with('user')->with('tags')->find($id);
-        //dd([ 'id' => $id, 'capsule' => $capsule]);        
         return $capsule;
     }
 
@@ -108,6 +108,10 @@ class CapsuleService
         $capsule->color = $id && !$request->has('color') ? $capsule->color : $request->input('color');
         $capsule->revealed = $id && !$request->has('revealed') ? $capsule->revealed : $request->input('revealed');
         $capsule->audio_path = $id && !$request->has('audio_path') ? $capsule->audio_path : $request->input('audio_path');
+        // If unlisted, generate a slug
+        if ($request->input('status') === 'unlisted') {
+            $capsule->identifier = Str::uuid(); // or use Str::random(16)
+        }
         $capsule->save();
 
         if ($request->has('selected_tags')) {

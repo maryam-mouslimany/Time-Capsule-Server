@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'log'),
+    'default' => env('MAIL_MAILER', 'mailgun'),
 
     /*
     |--------------------------------------------------------------------------
@@ -96,6 +96,14 @@ return [
             ],
             'retry_after' => 60,
         ],
+        'mailgun' => [
+            'transport' => 'mailgun',
+            // Optional timeout setting:
+            // 'client' => [
+            //     'timeout' => 5,
+            // ],
+        ],
+
 
     ],
 
