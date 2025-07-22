@@ -51,7 +51,7 @@ class CapsuleService
         }
 
         if ($request->selected_tag) {
-            $capsules->whereHas('tags', function ($query, $request) {
+            $capsules->whereHas('tags', function ($query)  use ($request) {
                 $query->where('tags.id', $request->selected_tag);
             });
         }

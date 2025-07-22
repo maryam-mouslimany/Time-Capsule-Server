@@ -6,6 +6,9 @@ use App\Models\Capsule;
 use Illuminate\Http\Request;
 use App\Services\CapsuleService;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\MyTestEmail;
+
 
 class CapsuleController extends Controller
 {
@@ -41,5 +44,12 @@ class CapsuleController extends Controller
     function getImage($filename)
     {
         return CapsuleService::getImage($filename);
+    }
+
+    public function sendEmail()
+    {
+        Mail::to('mouslimanymaryam@gmail.com')->send(new MyTestEmail());
+
+        return response()->json(['message' => 'Email sent successfully']);
     }
 }

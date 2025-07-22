@@ -9,6 +9,7 @@ Route::post("/login", [AuthController::class, "login"]);
 Route::post("/register", [AuthController::class, "register"]);
 Route::get('/capsule_image/{filename}', [CapsuleController::class, 'getImage']);
 Route::get('/capsule_unlisted/{identifier}', [CapsuleController::class, 'showUnlisted']);
+Route::get('/send_email', [CapsuleController::class, 'sendEmail']);
 
 Route::group(["middleware" => "auth:api"], function () {
 
