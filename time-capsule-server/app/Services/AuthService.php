@@ -12,8 +12,8 @@ class AuthService
     static function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|string|email',
-            'password' => 'required|string',
+            'email' => 'required|string|email|exists:users,email',
+            'password' => 'required|string|min:6',
         ]);
         $credentials = $request->only('email', 'password');
 
@@ -31,7 +31,7 @@ class AuthService
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => 'required|string|email|unique:users',
             'password' => 'required|string|min:6',
             'confirm_password' => 'required|same:password',
         ]);

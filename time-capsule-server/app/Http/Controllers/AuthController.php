@@ -14,7 +14,7 @@ class AuthController extends Controller
         if ($user) {
             return $this->response($user);
         }
-        return $this->response(null, "error", 401);
+        return $this->response(null, false, 401, "Invalid credentials.");
     }
 
     function register(Request $request)

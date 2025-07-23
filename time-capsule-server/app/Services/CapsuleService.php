@@ -6,10 +6,12 @@ use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Capsule;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use App\Services\DecodeBase64AndSave;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Stevebauman\Location\Facades\Location;
-
+use App\Mail\CapsuleRevealedMail;
 
 class CapsuleService
 {
@@ -25,21 +27,19 @@ class CapsuleService
 
     static function getDashboardCapsules($id)
     {
+        self::updateRevealedCapsules();
         $user = User::find($id);
         return $user->capsules()->with('tags')->get();
     }
 
     static function getPublicWallCapsules($request)
     {
-        Capsule::where('status', 'public')
-            ->where('revealed', false)
-            ->where('reveal_date', '<=', Carbon::now())
-            ->update(['revealed' => true]);
+        self::updateRevealedCapsules();
 
         $capsules = Capsule::with('user')->with('tags')->where('status', 'public')->where('revealed', true);
 
-        if ($request->filter_country) {
-            $capsules->where('country', $request->country);
+        if ($request->selected_country) {
+            $capsules->where('country', $request->selected_country);
         }
 
         if ($request->start_date) {
@@ -69,15 +69,11 @@ class CapsuleService
         }
 
         $fileContent = Storage::get($path);
-        $mimeType = Storage::mimeType($path);
-        return response($fileContent, 200)
-            ->header('Content-Type', $mimeType);
+        return response($fileContent, 200);
     }
 
-
-    static function addOrUpdate($request, $capsule, $id)
+    static function addOrUpdate($request, $capsule)
     {
-
         $ip = request()->ip();
         if ($ip === '127.0.0.1') {
             $ip = '8.8.8.8';
@@ -93,24 +89,29 @@ class CapsuleService
         }
         if (!empty($request->input('image_base64'))) {
             //dd($request->input('image_base64'));
-            $imagePath = DecodeBase64AndSave::decodeBase64AndSave($request->input('image_base64'));
-            //dd($imagePath);
-            $capsule->image_path = $imagePath;
+            $capsule->image_path = DecodeBase64AndSave::decodeBase64AndSave($request->input('image_base64'));
         }
 
-        $capsule->user_id = $request->input('user_id');
-        $capsule->title = $id && !$request->has('title') ? $capsule->title : $request->input('title');
-        $capsule->description = $id && !$request->has('description') ? $capsule->description : $request->input('description');
-        $capsule->status = $id && !$request->has('status') ? $capsule->status : $request->input('status');
-        $capsule->message = $id && !$request->has('message') ? $capsule->message : $request->input('message');
-        $capsule->surprise_mode = $id && !$request->has('surprise_mode') ? $capsule->surprise_mode : $request->input('surprise_mode');
-        $capsule->reveal_date = $id && !$request->has('reveal_date') ? $capsule->reveal_date : $request->input('reveal_date');
-        $capsule->color = $id && !$request->has('color') ? $capsule->color : $request->input('color');
-        $capsule->revealed = $id && !$request->has('revealed') ? $capsule->revealed : $request->input('revealed');
-        $capsule->audio_path = $id && !$request->has('audio_path') ? $capsule->audio_path : $request->input('audio_path');
-        // If unlisted, generate a slug
+        $attributes = [
+            'user_id',
+            'title',
+            'description',
+            'status',
+            'message',
+            'surprise_mode',
+            'reveal_date',
+            'color',
+            'revealed',
+            'audio_path',
+        ];
+
+        foreach ($attributes as $attr) {
+            if ($request->has($attr)) {
+                $capsule->$attr = $request->input($attr);
+            }
+        }
         if ($request->input('status') === 'unlisted') {
-            $capsule->identifier = Str::uuid(); // or use Str::random(16)
+            $capsule->identifier = Str::uuid();
         }
         $capsule->save();
 
@@ -118,5 +119,18 @@ class CapsuleService
             $capsule->tags()->sync($request->input('selected_tags'));
         }
         return $capsule;
+    }
+
+    static function updateRevealedCapsules()
+    {
+        $capsules = Capsule::where('revealed', false)
+            ->where('reveal_date', '<=', Carbon::now())
+            ->with('user')
+            ->get();
+        foreach ($capsules as $capsule) {
+            $capsule->revealed = true;
+            $capsule->save();
+            Mail::to($capsule->user->email)->send(new CapsuleRevealedMail($capsule));
+        }
     }
 }

@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Capsule;
+use App\Mail\MyTestEmail;
 use Illuminate\Http\Request;
 use App\Services\CapsuleService;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\MyTestEmail;
 
 
 class CapsuleController extends Controller
@@ -30,14 +31,18 @@ class CapsuleController extends Controller
         return $this->response($capsule);
     }
 
-    function addOrUpdateCapsule(Request $request, $id = null)
+    function addOrUpdateCapsule(Request $request, $param)
     {
-        $capsule = new Capsule;
-        if ($id) {
-            $capsule = Capsule::find($id);
-        }
+        if ($param === 'add') {
+            $capsule = new Capsule();
+        } else {
+            $capsule = Capsule::find($param);
 
-        CapsuleService::addOrUpdate($request, $capsule, $id);
+            if (!$capsule) {
+                return response()->json([null, false, 404]);
+            }
+        }
+        CapsuleService::addOrUpdate($request, $capsule);
         return $this->response($capsule);
     }
 
@@ -46,10 +51,15 @@ class CapsuleController extends Controller
         return CapsuleService::getImage($filename);
     }
 
-    public function sendEmail()
+    function sendEmail()
     {
         Mail::to('mouslimanymaryam@gmail.com')->send(new MyTestEmail());
 
         return response()->json(['message' => 'Email sent successfully']);
+    }
+
+    function getCountries()
+    {
+        return $this->response(DB::table('capsules')->distinct()->pluck('country'));
     }
 }
