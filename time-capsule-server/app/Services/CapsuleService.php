@@ -8,6 +8,7 @@ use App\Models\Capsule;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use App\Services\DecodeBase64AndSave;
+use App\Services\saveBase64Audio;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Stevebauman\Location\Facades\Location;
@@ -89,7 +90,11 @@ class CapsuleService
         }
         if (!empty($request->input('image_base64'))) {
             //dd($request->input('image_base64'));
-            $capsule->image_path = DecodeBase64AndSave::decodeBase64AndSave($request->input('image_base64'));
+            $capsule->image_path = DecodeBase64AndSave::saveBase64Media($request->input('image_base64'));
+        }
+         if (!empty($request->input('audio_base64'))) {
+            //dd($request->input('image_base64'));
+            $capsule->audio_path = DecodeBase64AndSave::saveBase64Media($request->input('audio_base64'));
         }
 
         $attributes = [
