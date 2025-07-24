@@ -6,13 +6,11 @@ use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Capsule;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
-use App\Services\DecodeBase64AndSave;
-use App\Services\saveBase64Audio;
+use App\Mail\CapsuleRevealedMail;
 use Illuminate\Support\Facades\Mail;
+use App\Services\DecodeBase64AndSave;
 use Illuminate\Support\Facades\Storage;
 use Stevebauman\Location\Facades\Location;
-use App\Mail\CapsuleRevealedMail;
 
 class CapsuleService
 {
@@ -28,14 +26,14 @@ class CapsuleService
 
     static function getDashboardCapsules($id)
     {
-        self::updateRevealedCapsules();
+        //self::updateRevealedCapsules();
         $user = User::find($id);
         return $user->capsules()->with('tags')->get();
     }
 
     static function getPublicWallCapsules($request)
     {
-        self::updateRevealedCapsules();
+        //self::updateRevealedCapsules();
 
         $capsules = Capsule::with('user')->with('tags')->where('status', 'public')->where('revealed', true);
 
@@ -67,6 +65,18 @@ class CapsuleService
 
         if (!Storage::exists($path)) {
             return response()->json(['message' => 'Image not found'], 404);
+        }
+
+        $fileContent = Storage::get($path);
+        return response($fileContent, 200);
+    }
+    static function getAudio($filename)
+    {
+        $path = 'CapsuleAudios/' . $filename;
+        //dd($path);
+
+        if (!Storage::exists($path)) {
+            return response()->json(['message' => 'Audio not found'], 404);
         }
 
         $fileContent = Storage::get($path);
@@ -126,7 +136,7 @@ class CapsuleService
         return $capsule;
     }
 
-    static function updateRevealedCapsules()
+    /*static function updateRevealedCapsules()
     {
         $capsules = Capsule::where('revealed', false)
             ->where('reveal_date', '<=', Carbon::now())
@@ -137,5 +147,5 @@ class CapsuleService
             $capsule->save();
             Mail::to($capsule->user->email)->send(new CapsuleRevealedMail($capsule));
         }
-    }
+    }*/
 }

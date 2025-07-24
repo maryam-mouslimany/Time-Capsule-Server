@@ -51,13 +51,11 @@ class CapsuleController extends Controller
         return CapsuleService::getImage($filename);
     }
 
-    function sendEmail()
+    function getAudio($filename)
     {
-        Mail::to('mouslimanymaryam@gmail.com')->send(new MyTestEmail());
-
-        return response()->json(['message' => 'Email sent successfully']);
+        return CapsuleService::getAudio($filename);
     }
-
+   
     function getCountries()
     {
         return $this->response(DB::table('capsules')->distinct()->pluck('country'));
